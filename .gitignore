@@ -1,0 +1,4 @@
+tags
+.php_cs.cache
+node_modules/
+tests/codeception/_output/
