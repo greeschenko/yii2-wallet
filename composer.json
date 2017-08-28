@@ -14,17 +14,7 @@
     "require": {
         "yiisoft/yii2": "*",
         "yiisoft/yii2-bootstrap": "*",
-        "yiisoft/yii2-swiftmailer": "*",
-        "fortawesome/font-awesome": "~4.7",
-        "yurkinx/yii2-image": "dev-master",
-        "kartik-v/yii2-widget-datetimepicker": "*",
-        "kartik-v/yii2-widget-datepicker": "@dev",
-        "kartik-v/yii2-field-range": "*",
-        "kartik-v/yii2-widget-select2": "@dev",
-        "vova07/yii2-imperavi-widget": "*",
-        "kartik-v/yii2-mpdf": "*",
-        "greeschenko/yii2-file": "dev-master",
-        "kartik-v/yii2-date-range": "*"
+        "fortawesome/font-awesome": "~4.7"
     },
     "autoload": {
         "psr-4": {
