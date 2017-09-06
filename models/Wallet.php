@@ -50,7 +50,9 @@ class Wallet extends \yii\db\ActiveRecord
 
     public function beforeSave($insert)
     {
-        $this->from_user = Yii::$app->user->identity->id;
+        if ($this->from_user == '') {
+            $this->from_user = Yii::$app->user->identity->id;
+        }
         $this->sum = $this->sum * 100;
         $deposit = self::getDeposit($this->to_user);
         $this->deposit = $deposit + $this->sum;
