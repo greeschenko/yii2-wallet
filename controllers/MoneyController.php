@@ -8,6 +8,9 @@ use greeschenko\wallet\models\WalletSearch;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
+use greeschenko\wallet\helpers\privat\PrivatWorker;
+use greeschenko\wallet\helpers\privat\PrivatHelper;
+use greeschenko\wallet\helpers\privat\PrivatTest;
 
 /**
  * DefaultController implements the CRUD actions for Wallet model.
@@ -27,6 +30,15 @@ class MoneyController extends Controller
                 ],
             ],
         ];
+    }
+
+    public function beforeAction($action)
+    {
+        if (in_array($action->id, ['privat-bill'])) {
+            $this->enableCsrfValidation = false;
+        }
+
+        return parent::beforeAction($action);
     }
 
     /**
@@ -161,5 +173,63 @@ class MoneyController extends Controller
         } else {
             throw new NotFoundHttpException('The requested page does not exist.');
         }
+    }
+
+    /**
+     * privat bank billing access point.
+     */
+    public function actionPrivatBill()
+    {
+        //\Yii::$app->response->format = \yii\web\Response::FORMAT_XML;
+        //
+
+        $data = PrivatWorker::process();
+        $action = $data->getAttribute('action');
+
+        switch ($action) {
+            case 'Search':
+                $bill_identifier = $data->find('Unit', 'bill_identifier')->getAttribute('value');
+                $userdata = [
+                    ['name' => 'Message', 'value' => 'message text'],
+                    ['name' => 'PayerInfo', 'attributes' => ['billIdentifier' => $bill_identifier], 'value' => [
+                        ['name' => 'Fio', 'value' => 'Иванов Иван Иванович'],
+                        ['name' => 'Phone', 'value' => '+321234214'],
+                    ]],
+                    ['name' => 'ServiceGroup', 'value' => [
+                        ['name' => 'DebtService', 'attributes' => ['metersGlobalTarif' => 14.65, 'serviceCode' => 101], 'value' => [
+                            ['name' => 'Message', 'value' => 'Тарифы на воду были изменены, за детальной информацией обращайтесь в ГорВодоканал!'],
+                        ]],
+                        ['name' => 'DebtService', 'attributes' => ['serviceCode' => 102], 'value' => [
+                            ['name' => 'ServiceName', 'value' => 'Квартирная плата'],
+                        ]],
+                    ]],
+                ];
+                $responce = PrivatHelper::data2xml($action, 'DebtPack', PrivatHelper::array2data($userdata));
+                break;
+            default:
+                $responce = self::createErrorXml('Undefined action: "'.self::$action.'".', 400);
+                break;
+        }
+
+        return $responce;
+    }
+
+    /**
+     * test privat bank billing access point.
+     */
+    public function actionTestPrivatBill($id)
+    {
+        $url = 'http://prozorrodev.ga/wallet/money/privat-bill';
+        $data = array(
+            [
+                'name' => 'Unit',
+                'value' => '',
+                'attributes' => [
+                    'name' => 'bill_identifier',
+                    'value' => $id,
+                ],
+            ],
+        );
+        PrivatTest::testSearch($url, $data);
     }
 }
