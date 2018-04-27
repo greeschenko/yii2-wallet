@@ -32,12 +32,12 @@ class PrivatWorker
      *
      * @return scting XML document
      */
-    public static function getError($message, $code)
+    public static function getError($action, $message, $code)
     {
         $data = array(
                 ['name' => 'Message', 'value' => $message],
         );
 
-        return PrivatHelper::data2xml(self::$action, 'ErrorInfo', PrivatHelper::array2data($data), $code);
+        return PrivatHelper::data2xml($action, 'ErrorInfo', PrivatHelper::array2data($data), $code);
     }
 }

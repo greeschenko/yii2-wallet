@@ -189,22 +189,69 @@ class MoneyController extends Controller
         switch ($action) {
             case 'Search':
                 $bill_identifier = $data->find('Unit', 'bill_identifier')->getAttribute('value');
-                $userdata = [
-                    ['name' => 'Message', 'value' => 'message text'],
-                    ['name' => 'PayerInfo', 'attributes' => ['billIdentifier' => $bill_identifier], 'value' => [
-                        ['name' => 'Fio', 'value' => 'Иванов Иван Иванович'],
-                        ['name' => 'Phone', 'value' => '+321234214'],
-                    ]],
-                    ['name' => 'ServiceGroup', 'value' => [
-                        ['name' => 'DebtService', 'attributes' => ['metersGlobalTarif' => 14.65, 'serviceCode' => 101], 'value' => [
-                            ['name' => 'Message', 'value' => 'Тарифы на воду были изменены, за детальной информацией обращайтесь в ГорВодоканал!'],
-                        ]],
-                        ['name' => 'DebtService', 'attributes' => ['serviceCode' => 102], 'value' => [
-                            ['name' => 'ServiceName', 'value' => 'Квартирная плата'],
-                        ]],
-                    ]],
-                ];
-                $responce = PrivatHelper::data2xml($action, 'DebtPack', PrivatHelper::array2data($userdata));
+                $userclass = $this->module->userclass;
+                $user = $userclass::findOne($bill_identifier);
+                if ($user != null) {
+                    $userdata = [
+                        [
+                            'name' => 'Message',
+                            'value' => 'Поповнення рахунку',
+                        ],
+                        [
+                            'name' => 'PayerInfo',
+                            'attributes' => [
+                                'billIdentifier' => $bill_identifier,
+                            ],
+                            'value' => [
+                                [
+                                    'name' => 'Fio',
+                                    'value' => $user->getSignName(),
+                                ],
+                                [
+                                    'name' => 'Phone',
+                                    'value' => $user->phone,
+                                ],
+                            ],
+                        ],
+                        [
+                            'name' => 'ServiceGroup',
+                            'value' => [
+                                [
+                                    'name' => 'DebtService',
+                                    'attributes' => [
+                                        'serviceCode' => 102,
+                                    ],
+                                    'value' => [
+                                        [
+                                            'name' => 'ServiceName',
+                                            'value' => 'Квартирная плата',
+                                        ],
+                                    ],
+                                ],
+                                [
+                                    'name' => 'PayerInfo',
+                                    'attributes' => [
+                                        'billIdentifier' => $bill_identifier,
+                                        'ls' => md5('pay_ac_'.$user->id),
+                                    ],
+                                    'value' => [
+                                        [
+                                            'name' => 'Fio',
+                                            'value' => $user->getSignName(),
+                                        ],
+                                        [
+                                            'name' => 'Phone',
+                                            'value' => $user->phone,
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ];
+                    $responce = PrivatHelper::data2xml($action, 'DebtPack', PrivatHelper::array2data($userdata));
+                } else {
+                    $responce = PrivatWorker::getError($action, 'Абонента не знайдено', 2);
+                }
                 break;
             default:
                 $responce = self::createErrorXml('Undefined action: "'.self::$action.'".', 400);
