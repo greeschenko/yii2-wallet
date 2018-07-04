@@ -224,7 +224,7 @@ class MoneyController extends Controller
                                     'value' => [
                                         [
                                             'name' => 'ServiceName',
-                                            'value' => 'Квартирная плата',
+                                            'value' => 'Поповнення рахунку',
                                         ],
                                     ],
                                 ],
