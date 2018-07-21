@@ -31,7 +31,10 @@ class PrivatTest
         $requestXML = PrivatHelper::data2xml('Search', 'Payer', $data);
         $responceXML = PrivatHelper::sendRequest($url, $requestXML);
         echo '<pre>';
-        echo "<b>XML ответ:</b>\n\n";
+        echo "<b>XML запит:</b>\n\n";
+        echo PrivatHelper::_print_xml($requestXML);
+        echo '<hr/>';
+        echo "<b>XML відповідь:</b>\n\n";
         echo PrivatHelper::_print_xml($responceXML);
         echo '<hr/>';
         $responce = PrivatHelper::xml2data($responceXML);
