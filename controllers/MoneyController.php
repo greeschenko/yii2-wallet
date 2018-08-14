@@ -80,7 +80,7 @@ class MoneyController extends Controller
      */
     public function actionForUser($id)
     {
-        $model = new wallet();
+        $model = new Wallet();
         $searchModel = new WalletSearch();
         $searchModel->to_user = $model->to_user = $id;
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
@@ -180,85 +180,24 @@ class MoneyController extends Controller
      */
     public function actionPrivatBill()
     {
-        //\Yii::$app->response->format = \yii\web\Response::FORMAT_XML;
-        //
+        \Yii::$app->response->format = \yii\web\Response::FORMAT_XML;
 
         $data = PrivatWorker::process();
         $action = $data->getAttribute('action');
 
         switch ($action) {
             case 'Search':
-                $bill_identifier = $data->find('Unit', 'bill_identifier')->getAttribute('value');
-                $userclass = $this->module->userclass;
-                $user = $userclass::findOne($bill_identifier);
-                if ($user != null) {
-                    $userdata = [
-                        [
-                            'name' => 'Message',
-                            'value' => 'Поповнення рахунку',
-                        ],
-                        [
-                            'name' => 'PayerInfo',
-                            'attributes' => [
-                                'billIdentifier' => $bill_identifier,
-                            ],
-                            'value' => [
-                                [
-                                    'name' => 'Fio',
-                                    'value' => $user->getSignName(),
-                                ],
-                                [
-                                    'name' => 'Phone',
-                                    'value' => $user->phone,
-                                ],
-                            ],
-                        ],
-                        [
-                            'name' => 'ServiceGroup',
-                            'value' => [
-                                [
-                                    'name' => 'DebtService',
-                                    'attributes' => [
-                                        'serviceCode' => 102,
-                                    ],
-                                    'value' => [
-                                        [
-                                            'name' => 'ServiceName',
-                                            'value' => 'Поповнення рахунку',
-                                        ],
-                                    ],
-                                ],
-                                [
-                                    'name' => 'PayerInfo',
-                                    'attributes' => [
-                                        'billIdentifier' => $bill_identifier,
-                                        'ls' => md5('pay_ac_'.$user->id),
-                                    ],
-                                    'value' => [
-                                        [
-                                            'name' => 'Fio',
-                                            'value' => $user->getSignName(),
-                                        ],
-                                        [
-                                            'name' => 'Phone',
-                                            'value' => $user->phone,
-                                        ],
-                                    ],
-                                ],
-                            ],
-                        ],
-                    ];
-                    $responce = PrivatHelper::data2xml($action, 'DebtPack', PrivatHelper::array2data($userdata));
-                } else {
-                    $responce = PrivatWorker::getError($action, 'Абонента не знайдено', 2);
-                }
+                $response = $this->doSearch($data, $action);
+                break;
+            case 'Pay':
+                $response = $this->doPay($data, $action);
                 break;
             default:
-                $responce = self::createErrorXml('Undefined action: "'.self::$action.'".', 400);
+                $response = self::createErrorXml('Undefined action: "'.self::$action.'".', 400);
                 break;
         }
 
-        return $responce;
+        return $response;
     }
 
     /**
@@ -278,5 +217,107 @@ class MoneyController extends Controller
             ],
         );
         PrivatTest::testSearch($url, $data);
+    }
+
+    /**
+     * search action handler.
+     */
+    private function doSearch($data, $action)
+    {
+        $bill_identifier = $data->find('Unit', 'bill_identifier')->getAttribute('value');
+        $userclass = $this->module->userclass;
+        $user = $userclass::findOne($bill_identifier);
+        if ($user != null) {
+            $userdata = [
+                [
+                    'name' => 'Message',
+                    'value' => 'Поповнення рахунку',
+                ],
+                [
+                    'name' => 'PayerInfo',
+                    'attributes' => [
+                        'billIdentifier' => $bill_identifier,
+                    ],
+                    'value' => [
+                        [
+                            'name' => 'Fio',
+                            'value' => $user->getSignName(),
+                        ],
+                        [
+                            'name' => 'Phone',
+                            'value' => $user->phone,
+                        ],
+                    ],
+                ],
+                [
+                    'name' => 'ServiceGroup',
+                    'value' => [
+                        [
+                            'name' => 'DebtService',
+                            'attributes' => [
+                                'serviceCode' => 101,
+                            ],
+                            'value' => [
+                                [
+                                    'name' => 'ServiceName',
+                                    'value' => 'Поповнення рахунку',
+                                ],
+                            ],
+                        ],
+                        [
+                            'name' => 'PayerInfo',
+                            'attributes' => [
+                                'billIdentifier' => $bill_identifier,
+                                'ls' => $user->id,
+                            ],
+                            'value' => [
+                                [
+                                    'name' => 'Fio',
+                                    'value' => $user->getSignName(),
+                                ],
+                                [
+                                    'name' => 'Phone',
+                                    'value' => $user->phone,
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ];
+            $response = PrivatHelper::data2xml($action, 'DebtPack', PrivatHelper::array2data($userdata));
+        } else {
+            $response = PrivatWorker::getError($action, 'Абонента не знайдено', 2);
+        }
+
+        return $response;
+    }
+
+    /**
+     * search action handler.
+     */
+    private function doPay($data, $action)
+    {
+        $bill_identifier = $data->find('PayerInfo')->getAttribute('billIdentifier');
+        $sum = $data->find('ServiceGroup')->find('Service')->getAttribute('sum');
+        $code = $data->find('ServiceGroup')->find('Service')->getAttribute('serviceCode');
+
+        $userclass = $this->module->userclass;
+        $user = $userclass::findOne($bill_identifier);
+        if ($user != null) {
+            $w = new Wallet();
+            $w->sum = $sum;
+            $w->to_user = $bill_identifier;
+            $w->from_user = 2;
+            $w->msg = "Поповнення рахунку (код $code)";
+            if ($w->save()) {
+                $response = PrivatHelper::data2xml($action, 'Gateway', [], false, $w->id);
+            } else {
+                $response = PrivatWorker::getError($action, 'Помилка збереження платежу', 99);
+            }
+        } else {
+            $response = PrivatWorker::getError($action, 'Абонента не знайдено', 2);
+        }
+
+        return $response;
     }
 }

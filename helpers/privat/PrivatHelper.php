@@ -20,7 +20,7 @@ class PrivatHelper
      *
      * @return string XML-document
      */
-    public static function data2xml($action, $dataType, $data, $code = false)
+    public static function data2xml($action, $dataType, $data, $code = false, $ref = false)
     {
         $xml = new SimpleXMLElement('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Transfer xmlns="http://debt.privatbank.ua/Transfer" interface="Debt"></Transfer>');
         $xml->addAttribute('action', $action);
@@ -28,6 +28,9 @@ class PrivatHelper
         $d->addAttribute('xsi:type', $dataType, 'http://www.w3.org/2001/XMLSchema-instance');
         if (is_numeric($code)) {
             $d->addAttribute('code', $code);
+        }
+        if ($ref) {
+            $d->addAttribute('reference', $ref);
         }
         self::_data2xml($xml->Data, $data);
 
