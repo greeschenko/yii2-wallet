@@ -180,8 +180,6 @@ class MoneyController extends Controller
      */
     public function actionPrivatBill()
     {
-        \Yii::$app->response->format = \yii\web\Response::FORMAT_XML;
-
         $data = PrivatWorker::process();
         $action = $data->getAttribute('action');
 
