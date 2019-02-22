@@ -3,6 +3,7 @@
 namespace greeschenko\wallet\controllers;
 
 use Yii;
+use yii\filters\AccessControl;
 use greeschenko\wallet\models\Wallet;
 use greeschenko\wallet\models\WalletSearch;
 use yii\web\Controller;
@@ -23,6 +24,33 @@ class MoneyController extends Controller
     public function behaviors()
     {
         return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'actions' => [
+                            'privat-bill',
+                            'test-privat-bill',
+                            'view',
+                        ],
+                        'allow' => true,
+                    ],
+                    [ //admin
+                        'allow' => true,
+                        'actions' => [
+                            'index',
+                            'for-user',
+                            'create',
+                            'update',
+                            'delete',
+                        ],
+                        'matchCallback' => function ($rule, $action) {
+                            return !Yii::$app->user->isGuest
+                                and Yii::$app->user->identity->role == 'admin';
+                        },
+                    ],
+                ],
+            ],
             'verbs' => [
                 'class' => VerbFilter::className(),
                 'actions' => [
