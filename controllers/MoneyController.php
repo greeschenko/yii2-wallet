@@ -32,6 +32,7 @@ class MoneyController extends Controller
                             'privat-bill',
                             'test-privat-bill',
                             'view',
+                            'show',
                         ],
                         'allow' => true,
                     ],
@@ -127,6 +128,27 @@ class MoneyController extends Controller
             'dataProvider' => $dataProvider,
             'deposit' => $deposit,
         ]);
+    }
+
+    public function actionShow($id)
+    {
+        if (!Yii::$app->user->isGuest and Yii::$app->user->identity->id == $id) {
+            $model = new Wallet();
+            $searchModel = new WalletSearch();
+            $searchModel->to_user = $model->to_user = $id;
+            $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+
+            $deposit = Wallet::getDeposit($id);
+
+            return $this->render('show', [
+                'model' => $model,
+                'searchModel' => $searchModel,
+                'dataProvider' => $dataProvider,
+                'deposit' => $deposit,
+            ]);
+        } else {
+            throw new \yii\web\HttpException(403, 'Доступ заборонено');
+        }
     }
 
     /**
